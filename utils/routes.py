@@ -24,7 +24,7 @@ def check_admin_access(is_request: bool = True):
         else:
             return False
 
-    # 云函数兼容性处理：获取 SECRET_KEY
+    # 云函数兼容性处理
     try:
         secret_key = current_app.config["SECRET_KEY"]
     except AttributeError:
@@ -292,12 +292,12 @@ def create_item():
     retirement_date = data.get("properties", {}).get("retirement_date")
     remark = data.get("properties", {}).get("remark")
     # 检查必填字段
-    if not name or not entry_date or not purchase_price:
+    if not name or not purchase_price:
         return (
             jsonify(
                 {
                     "success": False,
-                    "message": "Name, entry date, and purchase price are required fields.",
+                    "message": "Name and purchase price are required fields.",
                 }
             ),
             400,
