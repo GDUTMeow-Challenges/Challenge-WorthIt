@@ -44,3 +44,15 @@
 ![](https://cdn.jsdelivr.net/gh/GDUTMeow/Challenge-WorthIt/img/chrome_rJUGJtUZgF.png)
 
 我这里是本地测的，所以 flag 也是我自己填的 `FLAG=Nyan{thE_poW3r-0f-Xs5-1S-inf1n1TY}`
+
+## 彩蛋：出题契机
+
+其实这个网站是我写的一个小玩具，但是写的时候没有注意到 XSS 的问题，卡片是直接用 innerHTML 进行渲染的
+
+> WorthIt 记物：https://github.com/GamerNoTitle/WorthIt
+
+结果后面 Rusty 测试的时候，就帮我测出了这个问题，然后转念一想，这不是刚好可以拿来出题嘛
+
+然后这题就是这么出来了，用我那个源码花了三个半钟来构建和测试题目
+
+![](https://cdn.jsdelivr.net/gh/GDUTMeow/Challenge-WorthIt/img/1isCBlybS7.png)
