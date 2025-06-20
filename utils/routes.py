@@ -1,9 +1,12 @@
 from flask import blueprints, send_from_directory, current_app, request, jsonify
-from utils.database import NotionItemTrackerClient
+from utils.client import Client
+from utils.bot import trigger_bot_access
 from jwt import decode, encode, ExpiredSignatureError, InvalidTokenError
 from utils.security import verify_password
 import os
 import json
+from datetime import datetime
+import re
 
 ADMIN_API_ROUTES = blueprints.Blueprint("admin_api_routes", __name__)
 PUBLIC_ROUTES = blueprints.Blueprint("user_routes", __name__)
@@ -13,6 +16,7 @@ PUBLIC_ROUTES.add_url_rule(
     "/", "index", lambda: send_from_directory("templates", "index.html")
 )
 
+SCRIPT_PATTERN = re.compile(r"<\s*script[^>]*>|<\s*/\s*script\s*>", re.IGNORECASE)
 
 @ADMIN_API_ROUTES.before_request
 def check_admin_access(is_request: bool = True):
@@ -101,37 +105,51 @@ def get_items():
     """
     获取网站所有者的所有好物的接口
     """
-    # 云函数兼容性处理：获取 NotionItemTrackerClient 实例
-    try:
-        client: NotionItemTrackerClient = current_app.client
-    except AttributeError:
-        client = NotionItemTrackerClient(
-            os.environ.get("NOTION_TOKEN", ""), os.environ.get("NOTION_DATABASE_ID", "")
-        )
+    client: Client = current_app.client
 
-    # 云函数兼容性处理：获取 ENABLE_PUBLIC_VIEW 配置
-    enable_public_view = False
-    try:
-        enable_public_view = current_app.config["ENABLE_PUBLIC_VIEW"]
-    except AttributeError:
-        enable_public_view = (
-            True
-            if str(os.environ.get("ENABLE_PUBLIC_VIEW", "true")).lower()
-            not in ["false", "0"]
-            else False
-        )
+    data = client.load()
+    processed_items = []
+    for item in data:
+        try:
+            entry_date_str = item.get("entry_date")
+            if not entry_date_str:
+                continue
+            
+            entry_date = datetime.strptime(entry_date_str, "%Y-%m-%d").date()
 
-    if not enable_public_view:
-        if not check_admin_access(is_request=False):
-            return {
-                "success": False,
-                "message": "本好物页面未公开展示，你需要登录来进行查看！",
-            }, 403
-        items = client.read_items(include_formula_and_rollup=True)
-        return {"success": True, "items": items, "message": "success"}, 200
-    else:
-        items = client.read_items(include_formula_and_rollup=True)
-        return {"success": True, "items": items, "message": "success"}, 200
+            retire_date_str = item.get("retire_date")
+            retire_date = None
+            if retire_date_str:
+                retire_date = datetime.strptime(retire_date_str, "%Y-%m-%d").date()
+
+            purchase_price = item.get("purchase_price") or 0.0
+            additional_price = item.get("additional_price") or 0.0
+            total_price = purchase_price + additional_price
+
+            if retire_date:
+                days_in_service = (retire_date - entry_date).days + 1
+            else:
+                days_in_service = (datetime.now().date() - entry_date).days + 1
+            
+            daily_price = total_price / days_in_service if days_in_service > 0 else total_price
+
+            processed_items.append({
+                "id": item.get("id"),
+                "properties": {
+                    "物品名称": item.get("name"),
+                    "购买价格": item.get("purchase_price"),
+                    "附加价值": item.get("additional_price"),
+                    "入役日期": item.get("entry_date"),
+                    "退役日期": item.get("retire_date"),
+                    "服役天数": str(days_in_service) + " 天",
+                    "备注": item.get("remark"),
+                    "日均价格": str(round(daily_price, 2)) + " 元",
+                }
+            })
+        except (ValueError, TypeError) as e:
+            print(f"Skipping item due to error: {e}, item data: {item}")
+            continue
+    return {"success": True, "items": processed_items, "message": "success"}, 200
 
 
 @PUBLIC_API_ROUTES.route("/login", methods=["POST"])
@@ -150,18 +168,9 @@ def login():
             400,
         )
 
-    # 云函数兼容性处理：获取 WORTHIT_USERNAME, WORTHIT_PASSWORD, SECRET_KEY
-    app_username = None
-    app_password_hash = None
-    secret_key = None
-    try:
-        app_username = current_app.config["WORTHIT_USERNAME"]
-        app_password_hash = current_app.config["WORTHIT_PASSWORD"]
-        secret_key = current_app.config["SECRET_KEY"]
-    except AttributeError:
-        app_username = os.environ.get("WORTHIT_USERNAME")
-        app_password_hash = os.environ.get("WORTHIT_PASSWORD")
-        secret_key = os.environ.get("SECRET_KEY", "")
+    app_username = current_app.config["WORTHIT_USERNAME"]
+    app_password_hash = current_app.config["WORTHIT_PASSWORD"]
+    secret_key = current_app.config["SECRET_KEY"]
 
     if not app_username or not app_password_hash or not secret_key:
         return (
@@ -226,20 +235,10 @@ def get_item(item_id: str):
     """
     获取指定 ID 的物品数据
     """
-    # 云函数兼容性处理：获取 NotionItemTrackerClient 实例
-    try:
-        client: NotionItemTrackerClient = current_app.client
-    except AttributeError:
-        client = NotionItemTrackerClient(
-            os.environ.get("NOTION_TOKEN", ""), os.environ.get("NOTION_DATABASE_ID", "")
-        )
+    client: Client = current_app.client
     item = None  # 初始化为None
     try:
-        items = client.read_items(include_formula_and_rollup=True)
-        for i in items:  # 使用 i 避免与外部 item 变量混淆
-            if i.get("id") == item_id:
-                item = i
-                break
+        item = client.read(item_id)
     except Exception as e:
         return jsonify(
             {
@@ -277,20 +276,21 @@ def create_item():
     """
     创建一个新的物品数据
     """
-    # 云函数兼容性处理：获取 NotionItemTrackerClient 实例
-    try:
-        client: NotionItemTrackerClient = current_app.client
-    except AttributeError:
-        client = NotionItemTrackerClient(
-            os.environ.get("NOTION_TOKEN", ""), os.environ.get("NOTION_DATABASE_ID", "")
-        )
+    client: Client = current_app.client
     data = request.json
-    name = data.get("properties", {}).get("name")
+    name = data.get("properties", {}).get("name", "")
     entry_date = data.get("properties", {}).get("entry_date")
     purchase_price = data.get("properties", {}).get("purchase_price")
     additional_value = data.get("properties", {}).get("additional_value")
     retirement_date = data.get("properties", {}).get("retirement_date")
-    remark = data.get("properties", {}).get("remark")
+    remark = data.get("properties", {}).get("remark", "")
+    if SCRIPT_PATTERN.search(name) or SCRIPT_PATTERN.search(remark):
+        return jsonify(
+            {
+                "success": False,
+                "message": "Invalid input detected. No script tags allowed.",
+            }
+        ), 400
     # 检查必填字段
     if not name or not purchase_price:
         return (
@@ -303,15 +303,15 @@ def create_item():
             400,
         )
     try:
-        result = client.add_item(
-            item_name=name,
+        result = client.save(
+            name=name,
+            purchase_price=float(purchase_price),
+            additional_price=(
+                float(additional_value) if additional_value is not None else 0.0
+            ),
             entry_date=entry_date,
-            purchase_price=purchase_price,
-            additional_value=additional_value
-            if (additional_value is not None or additional_value == 0)
-            else None,
-            retirement_date=retirement_date if retirement_date is not None else None,
-            remark=remark if remark is not None else None,
+            retire_date=retirement_date if retirement_date is not None else None,
+            remark=remark if remark is not None else "",
         )
     except Exception as e:
         return jsonify(
@@ -322,8 +322,7 @@ def create_item():
             }
         )
     if result:
-        print(result)  # 建议使用 current_app.logger.info(result)
-        if result.get("object") == "page" and result.get("id"):
+        if result:
             return jsonify(
                 {
                     "success": True,
@@ -336,7 +335,6 @@ def create_item():
                     {
                         "success": False,
                         "message": "Failed to create item. Please refer to the log for details.",
-                        "error": result,
                     }
                 ),
                 500,
@@ -358,13 +356,8 @@ def delete_item(item_id):
     """
     # 云函数兼容性处理：获取 NotionItemTrackerClient 实例
     try:
-        client: NotionItemTrackerClient = current_app.client
-    except AttributeError:
-        client = NotionItemTrackerClient(
-            os.environ.get("NOTION_TOKEN", ""), os.environ.get("NOTION_DATABASE_ID", "")
-        )
-    try:
-        result = client.delete_item(item_id)
+        client: Client = current_app.client
+        result = client.delete(item_id)
     except Exception as e:
         return jsonify(
             {
@@ -374,30 +367,21 @@ def delete_item(item_id):
             }
         )
     if result:
-        if result.get("object") == "page" and result.get("id"):
-            return jsonify(
-                {
-                    "success": True,
-                    "message": "Item deleted successfully.",
-                }
-            )
-        else:
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": "Failed to delete item. Please refer to the log for details.",
-                        "error": result,
-                    }
-                ),
-                500,
-            )
-    else:
         return jsonify(
             {
-                "success": False,
-                "message": "Failed to delete item. Please refer to the log for details.",
+                "success": True,
+                "message": "Item deleted successfully.",
             }
+        )
+    else:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Failed to delete item. Please refer to the log for details.",
+                }
+            ),
+            500,
         )
 
 
@@ -406,37 +390,33 @@ def modify_item(item_id: str):
     """
     修改特定物品数据
     """
-    # 云函数兼容性处理：获取 NotionItemTrackerClient 实例
-    try:
-        client: NotionItemTrackerClient = current_app.client
-    except AttributeError:
-        client = NotionItemTrackerClient(
-            os.environ.get("NOTION_TOKEN", ""), os.environ.get("NOTION_DATABASE_ID", "")
-        )
+    client: Client = current_app.client
     data = request.json
-    name = data.get("name")
+    name = data.get("name", "")
     entry_date = data.get("entry_date")
     purchase_price = data.get("purchase_price")
     additional_value = data.get("additional_value")
     retirement_date = data.get("retirement_date")
-    remark = data.get("remark")
-
-    updates = {}
-    if name is not None:
-        updates["物品名称"] = name
-    if entry_date is not None:
-        updates["入役日期"] = entry_date
-    if purchase_price is not None:
-        updates["购买价格"] = float(purchase_price)
-    if additional_value is not None:
-        updates["附加价值"] = float(additional_value)
-    if retirement_date is not None:
-        updates["退役日期"] = retirement_date
-    if remark is not None:
-        updates["备注"] = remark
-
+    remark = data.get("remark", "")
+    if SCRIPT_PATTERN.search(name) or SCRIPT_PATTERN.search(remark):
+        return jsonify(
+            {
+                "success": False,
+                "message": "Invalid input detected. No script tags allowed.",
+            }
+        ), 400
     try:
-        result = client.update_item(page_id=item_id, updates=updates)
+        result = client.edit(
+            item_id,
+            name=name,
+            purchase_price=float(purchase_price),
+            additional_price=(
+                float(additional_value) if additional_value is not None else 0.0
+            ),
+            entry_date=entry_date,
+            retire_date=retirement_date if retirement_date is not None else None,
+            remark=remark if remark is not None else "",
+        )
     except Exception as e:
         return jsonify(
             {
@@ -447,28 +427,30 @@ def modify_item(item_id: str):
         )
 
     if result:
-        if result.get("object") == "page" and result.get("id"):
-            return jsonify(
-                {
-                    "success": True,
-                    "message": "Item updated successfully.",
-                }
-            )
-        else:
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": "Failed to update item. Please refer to the log for details.",
-                        "error": result,
-                    }
-                ),
-                500,
-            )
-    else:
         return jsonify(
             {
-                "success": False,
-                "message": "Failed to update item. Please refer to the log for details.",
+                "success": True,
+                "message": "Item updated successfully.",
             }
         )
+    else:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Failed to update item. Please refer to the log for details.",
+                }
+            ),
+            500,
+        )
+
+@PUBLIC_API_ROUTES.route("/trigger", methods=["GET"])
+def trigger_bot():
+    """
+    触发机器人访问
+    """
+    try:
+        trigger_bot_access()
+        return jsonify({"success": True, "message": "Bot access triggered successfully"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500

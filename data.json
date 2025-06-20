@@ -1,0 +1,52 @@
+[
+    {
+        "id": "01fb32a9-8d28-4347-a5b4-ed900b10a7ab",
+        "name": "一加 ACE 5",
+        "entry_date": "2024-11-05",
+        "purchase_price": 2999.0,
+        "remark": "这是 Luminoria 买给自己的 18 岁生日礼物，超好用哒~"
+    },
+    {
+        "id": "f4a2c1b9-7d5e-4f8c-9a1b-3b6d9c7a4e2f",
+        "name": "MacBook Pro 14英寸 (M1 Pro)",
+        "entry_date": "2022-03-15",
+        "purchase_price": 14999.0,
+        "remark": "主力生产力工具，用来写代码和剪视频。"
+    },
+    {
+        "id": "8c9d0e1f-a3b4-4c5d-8e6f-1a2b3c4d5e6f",
+        "name": "任天堂 Switch (OLED版)",
+        "entry_date": "2023-01-20",
+        "purchase_price": 2599.0,
+        "remark": "塞尔达启动器！偶尔玩玩健身环。"
+    },
+    {
+        "id": "1a2b3c4d-5e6f-4a8b-9c0d-e1f2a3b4c5d6",
+        "name": "索尼 WH-1000XM5 降噪耳机",
+        "entry_date": "2024-05-10",
+        "purchase_price": 2200.50,
+        "remark": "降噪效果无敌，地铁通勤必备。"
+    },
+    {
+        "id": "d0e1f2a3-b4c5-4d6e-8f9a-0b1c2d3e4f5a",
+        "name": "红米 K40 (已退休)",
+        "entry_date": "2018-10-01",
+        "retire_date": "2024-11-05",
+        "purchase_price": 6888.0,
+        "remark": "屏幕有裂痕，电池不行了，现在是备用机中的备用机。"
+    },
+    {
+        "id": "c9b8a7d6-e5f4-4a3b-9c2d-1e0f9b8a7c6d",
+        "name": "MGEX 强袭自由高达模型",
+        "entry_date": "2023-08-18",
+        "purchase_price": 800.0,
+        "remark": "花了整整一个星期拼好的，还没来得及渗线和贴水贴，目前在柜子里吃灰。"
+    },
+    {
+        "id": "5e6f7a8b-9c0d-4e1f-a2b3-c4d5e6f7a8b9",
+        "name": "罗技 MX Master 3S 鼠标",
+        "entry_date": "2022-06-01",
+        "purchase_price": 699.0,
+        "remark": "手感很棒，就是有点重。滚轮太爽了！"
+    }
+]
