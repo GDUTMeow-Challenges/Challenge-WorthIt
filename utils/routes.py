@@ -460,6 +460,8 @@ def modify_item(item_id: str):
             remark=remark if remark is not None else "",
         )
     except Exception as e:
+        import traceback
+        print(traceback.format_exc())
         return jsonify(
             {
                 "success": False,

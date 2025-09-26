@@ -77,12 +77,12 @@ class Client:
                 return False
             for item in data:
                 if item.get("id") == iid:
-                    item["name"] = name
-                    item["purchase_price"] = purchase_price
-                    item["additional_price"] = additional_price
-                    item["entry_date"] = entry_date.isoformat()
-                    item["retire_date"] = retire_date.isoformat()
-                    item["remark"] = remark
+                    item["name"] = name if name else item["name"]
+                    item["purchase_price"] = purchase_price if purchase_price else item.get("purchase_price")
+                    item["additional_price"] = additional_price if additional_price else item.get("additional_price")
+                    item["entry_date"] = entry_date.isoformat() if entry_date else item.get("entry_date")
+                    item["retire_date"] = retire_date.isoformat() if retire_date else item.get("retire_date")
+                    item["remark"] = remark if remark else item.get("remark")
                     break
             else:
                 print(f"Error: {name} not found in the data.")
