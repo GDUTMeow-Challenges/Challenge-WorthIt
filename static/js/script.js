@@ -329,28 +329,28 @@ function openEditItemDialog(itemId, itemName) {
         }
     }).then(data => {
         const item = data.item;
-        itemNameInput.value = item.properties.物品名称 || '';
-        itemPriceInput.value = item.properties.购买价格 || '';
-        itemAdditionValue.value = item.properties.附加价值 || '';
-        itemEntryDateInput.value = item.properties.入役日期 || '';
-        itemRetirementDateInput.value = item.properties.退役日期 || '';
-        itemWorkingDaysInput.value = item.properties.服役天数 || '';
-        itemDailyValueInput.value = item.properties.日均价格 || '';
-        itemDescriptionInput.value = item.properties.备注 || '';
+        itemNameInput.value = item.物品名称 || '';
+        itemPriceInput.value = item.购买价格 || '';
+        itemAdditionValue.value = item.附加价值 || '';
+        itemEntryDateInput.value = item.入役日期 || '';
+        itemRetirementDateInput.value = item.退役日期 || '';
+        itemWorkingDaysInput.value = item.服役天数 || '';
+        itemDailyValueInput.value = item.日均价格 || '';
+        itemDescriptionInput.value = item.备注 || '';
         autoPaddingDatePicker();
         loadingContainer.classList.add('hidden'); // 隐藏加载容器
         itemEditContainer.classList.remove('hidden'); // 显示编辑容器
         prevData = {
             id: item.id,
             properties: {
-                物品名称: item.properties.物品名称 || '',
-                购买价格: item.properties.购买价格 || '',
-                附加价值: item.properties.附加价值 || '',
-                入役日期: item.properties.入役日期 || '',
-                退役日期: item.properties.退役日期 || '',
-                服役天数: item.properties.服役天数 || '',
-                日均价格: item.properties.日均价格 || '',
-                备注: item.properties.备注 || ''
+                物品名称: item.物品名称 || '',
+                购买价格: item.购买价格 || '',
+                附加价值: item.附加价值 || '',
+                入役日期: item.入役日期 || '',
+                退役日期: item.退役日期 || '',
+                服役天数: item.服役天数 || '',
+                日均价格: item.日均价格 || '',
+                备注: item.备注 || ''
             }
         }
         const confirmButton = document.getElementById('edit-item-save-btn');

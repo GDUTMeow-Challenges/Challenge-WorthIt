@@ -18,6 +18,7 @@ PUBLIC_ROUTES.add_url_rule(
 
 SCRIPT_PATTERN = re.compile(r"<\s*script[^>]*>|<\s*/\s*script\s*>", re.IGNORECASE)
 
+
 @ADMIN_API_ROUTES.before_request
 def check_admin_access(is_request: bool = True):
     cookie = request.cookies
@@ -114,7 +115,7 @@ def get_items():
             entry_date_str = item.get("entry_date")
             if not entry_date_str:
                 continue
-            
+
             entry_date = datetime.strptime(entry_date_str, "%Y-%m-%d").date()
 
             retire_date_str = item.get("retire_date")
@@ -130,22 +131,26 @@ def get_items():
                 days_in_service = (retire_date - entry_date).days + 1
             else:
                 days_in_service = (datetime.now().date() - entry_date).days + 1
-            
-            daily_price = total_price / days_in_service if days_in_service > 0 else total_price
 
-            processed_items.append({
-                "id": item.get("id"),
-                "properties": {
-                    "物品名称": item.get("name"),
-                    "购买价格": item.get("purchase_price"),
-                    "附加价值": item.get("additional_price"),
-                    "入役日期": item.get("entry_date"),
-                    "退役日期": item.get("retire_date"),
-                    "服役天数": str(days_in_service) + " 天",
-                    "备注": item.get("remark"),
-                    "日均价格": str(round(daily_price, 2)) + " 元",
+            daily_price = (
+                total_price / days_in_service if days_in_service > 0 else total_price
+            )
+
+            processed_items.append(
+                {
+                    "id": item.get("id"),
+                    "properties": {
+                        "物品名称": item.get("name"),
+                        "购买价格": item.get("purchase_price"),
+                        "附加价值": item.get("additional_price"),
+                        "入役日期": item.get("entry_date"),
+                        "退役日期": item.get("retire_date"),
+                        "服役天数": str(days_in_service) + " 天",
+                        "备注": item.get("remark"),
+                        "日均价格": str(round(daily_price, 2)) + " 元",
+                    },
                 }
-            })
+            )
         except (ValueError, TypeError) as e:
             print(f"Skipping item due to error: {e}, item data: {item}")
             continue
@@ -239,6 +244,28 @@ def get_item(item_id: str):
     item = None  # 初始化为None
     try:
         item = client.read(item_id)
+        entry_date_str = item.get("entry_date")
+        if entry_date_str:
+            entry_date = datetime.strptime(entry_date_str, "%Y-%m-%d").date()
+
+        retire_date_str = item.get("retire_date")
+        retire_date = None
+        if retire_date_str:
+            retire_date = datetime.strptime(retire_date_str, "%Y-%m-%d").date()
+
+        purchase_price = item.get("purchase_price") or 0.0
+        additional_price = item.get("additional_price") or 0.0
+        total_price = purchase_price + additional_price
+
+        if retire_date:
+            days_in_service = (retire_date - entry_date).days + 1
+        else:
+            days_in_service = (datetime.now().date() - entry_date).days + 1
+
+        daily_price = (
+            total_price / days_in_service if days_in_service > 0 else total_price
+        )
+
     except Exception as e:
         return jsonify(
             {
@@ -252,7 +279,16 @@ def get_item(item_id: str):
             jsonify(
                 {
                     "success": True,
-                    "item": item,
+                    "item": {
+                        "物品名称": item.get("name"),
+                        "购买价格": item.get("purchase_price"),
+                        "附加价值": item.get("additional_price"),
+                        "入役日期": item.get("entry_date"),
+                        "退役日期": item.get("retire_date"),
+                        "服役天数": str(days_in_service) + " 天",
+                        "备注": item.get("remark"),
+                        "日均价格": str(round(daily_price, 2)) + " 元",
+                    },
                     "message": "Item retrieved successfully",
                 }
             ),
@@ -285,12 +321,15 @@ def create_item():
     retirement_date = data.get("properties", {}).get("retirement_date")
     remark = data.get("properties", {}).get("remark", "")
     if SCRIPT_PATTERN.search(name) or SCRIPT_PATTERN.search(remark):
-        return jsonify(
-            {
-                "success": False,
-                "message": "Invalid input detected. No script tags allowed.",
-            }
-        ), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Invalid input detected. No script tags allowed.",
+                }
+            ),
+            400,
+        )
     # 检查必填字段
     if not name or not purchase_price:
         return (
@@ -399,12 +438,15 @@ def modify_item(item_id: str):
     retirement_date = data.get("retirement_date")
     remark = data.get("remark", "")
     if SCRIPT_PATTERN.search(name) or SCRIPT_PATTERN.search(remark):
-        return jsonify(
-            {
-                "success": False,
-                "message": "Invalid input detected. No script tags allowed.",
-            }
-        ), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Invalid input detected. No script tags allowed.",
+                }
+            ),
+            400,
+        )
     try:
         result = client.edit(
             item_id,
@@ -444,6 +486,7 @@ def modify_item(item_id: str):
             500,
         )
 
+
 @PUBLIC_API_ROUTES.route("/trigger", methods=["GET"])
 def trigger_bot():
     """
@@ -451,6 +494,9 @@ def trigger_bot():
     """
     try:
         trigger_bot_access()
-        return jsonify({"success": True, "message": "Bot access triggered successfully"}), 200
+        return (
+            jsonify({"success": True, "message": "Bot access triggered successfully"}),
+            200,
+        )
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
