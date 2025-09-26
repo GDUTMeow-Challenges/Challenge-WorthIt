@@ -12,7 +12,6 @@ RUN \
     ca-certificates \
     libglib2.0-0 \
     libnss3 \
-    libgconf-2-4 \
     libfontconfig1 \
     libx11-6 \
     libx11-xcb1 \
@@ -25,7 +24,8 @@ RUN \
     libgtk-3-0 \
     libasound2 \
     libxshmfence1 \
-    libgbm1
+    libgbm1 \
+    --fix-missing
 
 RUN wget -q -O /tmp/chrome.zip "https://storage.googleapis.com/chrome-for-testing-public/113.0.5672.0/linux64/chrome-linux64.zip" && \
     unzip /tmp/chrome.zip -d /opt/ && \

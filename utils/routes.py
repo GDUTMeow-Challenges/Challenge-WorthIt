@@ -192,7 +192,7 @@ def login():
                     algorithm="HS256",
                 )
                 response = jsonify({"success": True, "message": "Login successful"})
-                response.set_cookie("token", token, httponly=True, secure=True)
+                response.set_cookie("token", token)
                 return response
             except Exception as e:
                 # 记录编码token的错误
