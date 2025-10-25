@@ -13,17 +13,17 @@
 
 尝试登录，发现正确
 
-![](https://cdn.jsdelivr.net/gh/GDUTMeow/Challenge-WorthIt/img/chrome_qRVvyiurc2.png)
+![](https://cdn.jsdelivr.net/gh/GDUTMeow-Challenges/Challenge-WorthIt/img/chrome_qRVvyiurc2.png)
 
 ## XSS 尝试
 
 因为这里很明显有存储功能，可以尝试一下是否存在存储型 XSS，尝试添加一个名字为 `<script>alert(1)</script>` 的物品，发现添加失败，在 Dev Tool 能看到不允许用 `<script>` 标签
 
-![](https://cdn.jsdelivr.net/gh/GDUTMeow/Challenge-WorthIt/img/chrome_0ANg6tlHYx.png)
+![](https://cdn.jsdelivr.net/gh/GDUTMeow-Challenges/Challenge-WorthIt/img/chrome_0ANg6tlHYx.png)
 
 尝试用 `<img>` 的 `onerror`，发现是可以成功添加的，并且可以正确触发
 
-![](https://cdn.jsdelivr.net/gh/GDUTMeow/Challenge-WorthIt/img/chrome_LSSUaUbA4p.png)
+![](https://cdn.jsdelivr.net/gh/GDUTMeow-Challenges/Challenge-WorthIt/img/chrome_LSSUaUbA4p.png)
 
 ## Payload
 
@@ -35,15 +35,15 @@
 
 **如果不是在网页的输入框里，而是在 Yakit 等工具里面，记得用反斜杠 `\` 转义双引号（如图）**
 
-![](https://cdn.jsdelivr.net/gh/GDUTMeow/Challenge-WorthIt/img/Yakit_91EfigMSps.png)
+![](https://cdn.jsdelivr.net/gh/GDUTMeow-Challenges/Challenge-WorthIt/img/Yakit_91EfigMSps.png)
 
 添加后，会发现出现了一个奇怪的卡片
 
-![](https://cdn.jsdelivr.net/gh/GDUTMeow/Challenge-WorthIt/img/chrome_Rsyb95sXTl.png)
+![](https://cdn.jsdelivr.net/gh/GDUTMeow-Challenges/Challenge-WorthIt/img/chrome_Rsyb95sXTl.png)
 
 点击左侧的「呼叫」按钮，让 Luminoria 来看网站，就可以拿到 flag 了
 
-![](https://cdn.jsdelivr.net/gh/GDUTMeow/Challenge-WorthIt/img/chrome_rJUGJtUZgF.png)
+![](https://cdn.jsdelivr.net/gh/GDUTMeow-Challenges/Challenge-WorthIt/img/chrome_rJUGJtUZgF.png)
 
 我这里是本地测的，所以 flag 也是我自己填的 `FLAG=Nyan{thE_poW3r-0f-Xs5-1S-inf1n1TY}`
 
@@ -57,4 +57,4 @@
 
 然后这题就是这么出来了，用我那个源码花了三个半钟来构建和测试题目
 
-![](https://cdn.jsdelivr.net/gh/GDUTMeow/Challenge-WorthIt/img/1isCBlybS7.png)
+![](https://cdn.jsdelivr.net/gh/GDUTMeow-Challenges/Challenge-WorthIt/img/1isCBlybS7.png)
