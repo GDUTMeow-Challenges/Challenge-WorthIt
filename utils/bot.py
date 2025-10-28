@@ -42,7 +42,7 @@ def trigger_bot_access():
         driver.add_cookie(
             {
                 "name": "FLAG",
-                "value": os.environ.get("FLAG", "FLAG{THIS_IS_A_TEST_FLAG}"),
+                "value": os.environ.get("ATTACKR_FLAG", "FLAG{THIS_IS_A_TEST_FLAG}"),
             }
         )
         print(driver.get_cookies())

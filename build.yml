@@ -1,0 +1,10 @@
+steps:
+  - type: Docker
+
+    path: .
+
+    config:
+      exposed:
+        - 5000/tcp
+
+artifacts: []
