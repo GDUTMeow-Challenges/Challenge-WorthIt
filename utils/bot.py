@@ -2,6 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from utils.log import get_logger
 import time
 import copy
 import os
@@ -16,8 +17,14 @@ fetch('/api/public/login', {
         'Content-Type': 'application/json'
     },
     body: JSON.stringify({ username, password })
+}).then(response => {
+    if (!response.ok) {
+        throw new Error('Network response was not ok ' + response.statusText);
+    }
+    console.log(response.json());
 });"""
 
+logger = get_logger("bot")
 
 def trigger_bot_access():
     options = webdriver.ChromeOptions()
@@ -36,36 +43,36 @@ def trigger_bot_access():
         USERNAME = "Luminoria"
         PASSWORD = "20061105"
 
-        print("Triggered bot access...")
+        logger.info("Triggered bot access...")
 
         driver.get("http://127.0.0.1:5000")
         driver.add_cookie(
             {
                 "name": "FLAG",
-                "value": os.environ.get("ATTACKR_FLAG", "FLAG{THIS_IS_A_TEST_FLAG}"),
+                "value": os.environ.get("A1CTF_FLAG", "FLAG{THIS_IS_A_TEST_FLAG}"),
             }
         )
-        print(driver.get_cookies())
+        logger.info(driver.get_cookies())
 
-        print("FLAG cookie set.")
-        print("Logging in...")
+        logger.info("FLAG cookie set.")
+        logger.info("Logging in...")
         driver.execute_script(LOGIN_FUNC, USERNAME, PASSWORD)
         time.sleep(3)
-        print("Login submitted.")
-        print(driver.get_cookies())
+        logger.info("Login submitted.")
+        logger.info(driver.get_cookies())
 
-        print("Triggering XSS...")
+        logger.info("Triggering XSS...")
         driver.get("http://127.0.0.1:5000")
         time.sleep(3)  # 加载时间，要渲染页面，不然出不来
-        print("Done.")
+        logger.info("Done.")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.info(f"An error occurred: {e}")
     finally:
         if driver:
             driver.quit()
-            print("Driver quit.")
+            logger.info("Driver quit.")
 
 
 if __name__ == "__main__":
     trigger_bot_access()
-    print("Bot access triggered successfully.")
+    logger.info("Bot access triggered successfully.")

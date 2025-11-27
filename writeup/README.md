@@ -58,3 +58,7 @@
 然后这题就是这么出来了，用我那个源码花了三个半钟来构建和测试题目
 
 ![](https://cdn.jsdelivr.net/gh/GDUTMeow-Challenges/Challenge-WorthIt/img/1isCBlybS7.png)
+
+### 补充说明
+
+因为容器是不出网的，很多选手应该是让 AI 写的 payload 使用了 webhook，但因为容器不出网所以是运行不了的。
